@@ -1,129 +1,118 @@
-import cv2
+# ----------------------------------------------------------
+# DIGITAL IMAGE PROCESSING
+# Manual Implementation of Image Enhancement Techniques
+# 1. Negative Transformation
+# 2. Gamma (Power Law) Transformation
+# 3. Log Transformation
+#
+# NOTE:
+# Mathematical operations are implemented manually.
+# OpenCV is used ONLY for reading and displaying images.
+# ---------------------------------------------------------import cv2
 import numpy as np
-import matplotlib.pyplot as plt
+# ---------------- Image Loading ----------------
+path = "DATASET/LAB_2/lab_2_image.jpg"
 
-
-# ---------------------------------------
-# 1. Read the image
-# ---------------------------------------
-
-img = cv2.imread("road.png", 0)
+img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
 
 if img is None:
-    print("Image not found!")
+    print("Error: Unable to load image.")
     exit()
 
-
-# ---------------------------------------
-# 2. Add Gaussian Noise
-# ---------------------------------------
-
-noise = np.random.normal(0, 10, img.shape)
-
-noisy_img = img + noise
-noisy_img = np.clip(noisy_img, 0, 255).astype(np.uint8)
+print("Image Loaded Successfully")
 
 
-# ---------------------------------------
-# 3. Averaging Filter from Scratch
-# ---------------------------------------
+# ---------------- Negative ----------------
+def negative(image):
+    rows, cols = image.shape
 
-def averaging_filter(image, size):
+    result = np.zeros((rows, cols), dtype=np.uint8)
 
-    pad = size // 2
+    for i in range(rows):
+        for j in range(cols):
+            result[i, j] = 255 - image[i, j]
 
-    # Add border
-    padded = np.pad(image, pad, mode="edge")
-
-    output = np.zeros_like(image)
-
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
-
-            # Take small window
-            window = padded[i:i+size, j:j+size]
-
-            # Calculate average
-            output[i, j] = np.mean(window)
-
-    return output
+    return result
 
 
-# Apply different filters
+# ---------------- Gamma ----------------
+def gamma_transform(image, gamma):
 
-filter3 = averaging_filter(noisy_img, 3)
-filter5 = averaging_filter(noisy_img, 5)
-filter9 = averaging_filter(noisy_img, 9)
+    rows, cols = image.shape
 
+    result = np.zeros((rows, cols), dtype=np.uint8)
 
-# ---------------------------------------
-# 4. Laplacian Sharpening
-# ---------------------------------------
+    for i in range(rows):
+        for j in range(cols):
 
-def laplacian_sharpen(image):
+            r = image[i, j] / 255.0
 
-    kernel = np.array([
-        [0, -1, 0],
-        [-1, 4, -1],
-        [0, -1, 0]
-    ])
+            s = pow(r, gamma)
 
-    padded = np.pad(image, 1, mode="edge")
+            result[i, j] = np.uint8(s * 255)
 
-    output = np.zeros_like(image, dtype=float)
+    return result
 
-    for i in range(image.shape[0]):
-        for j in range(image.shape[1]):
+# // C:\Users\Acer\OneDrive\Desktop\divp\myenv\lab2.py
+# ---------------- Log ----------------
+def log_transform(image):
 
-            window = padded[i:i+3, j:j+3]
+    rows, cols = image.shape
 
-            output[i, j] = np.sum(window * kernel)
+    result = np.zeros((rows, cols), dtype=np.uint8)
 
-    sharpened = image.astype(float) + output
+    c = 255 / np.log(256)
 
-    sharpened = np.clip(sharpened, 0, 255)
+    for i in range(rows):
+        for j in range(cols):
 
-    return sharpened.astype(np.uint8)
+            result[i, j] = np.uint8(c * np.log(1 + image[i, j]))
 
-
-sharpened = laplacian_sharpen(filter5)
+    return result
 
 
-# ---------------------------------------
-# 5. Display Results
-# ---------------------------------------
+# ---------------- Menu ----------------
+while True:
 
-plt.figure(figsize=(12, 8))
+    print("\n========== MENU ==========")
+    print("1. Negative")
+    print("2. Gamma (Power Law)")
+    print("3. Log Transformation")
+    print("4. Exit")
 
-plt.subplot(2, 3, 1)
-plt.imshow(img, cmap="gray")
-plt.title("Original Image")
-plt.axis("off")
+    choice = int(input("Enter Choice: "))
 
-plt.subplot(2, 3, 2)
-plt.imshow(noisy_img, cmap="gray")
-plt.title("Noisy Image")
-plt.axis("off")
+    if choice == 1:
 
-plt.subplot(2, 3, 3)
-plt.imshow(filter3, cmap="gray")
-plt.title("3x3 Average")
-plt.axis("off")
+        output = negative(img)
 
-plt.subplot(2, 3, 4)
-plt.imshow(filter5, cmap="gray")
-plt.title("5x5 Average")
-plt.axis("off")
+        cv2.imshow("Original", img)
+        cv2.imshow("Negative", output)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
 
-plt.subplot(2, 3, 5)
-plt.imshow(filter9, cmap="gray")
-plt.title("9x9 Average")
-plt.axis("off")
+    elif choice == 2:
 
-plt.subplot(2, 3, 6)
-plt.imshow(sharpened, cmap="gray")
-plt.title("Laplacian Sharpened")
-plt.axis("off")
+        gamma = float(input("Enter Gamma Value: "))
 
-plt.tight_layout()
-plt.show()
+        output = gamma_transform(img, gamma)
+
+        cv2.imshow("Original", img)
+        cv2.imshow("Gamma", output)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    elif choice == 3:
+
+        output = log_transform(img)
+
+        cv2.imshow("Original", img)
+        cv2.imshow("Log", output)
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+
+    elif choice == 4:
+        break
+
+    else:
+        print("Invalid Choice")
